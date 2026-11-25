@@ -118,11 +118,18 @@ void Reset_IRQHandler(void) {
      * They also beat hand-rolled byte loops: newlib's ARM memcpy aligns to
      * words and moves 64 bytes per iteration through 16 unrolled LDR/STR
      * pairs; memset replicates the byte into a word and clears 16 bytes per
-     * iteration with STRD pairs. GCC may additionally inline small
-     * constant-size copies as plain loads/stores. (No FPU tricks in this
-     * build: newlib's memcpy is integer-only. VLDM/VSTM or NEON variants
-     * exist in other libcs, but NEON is absent on Cortex-M4 and FP register
-     * moves buy nothing over LDR/STR for plain copying.) */
+     * iteration with STRD pairs. (No FPU tricks in this build: newlib's
+     * memcpy is integer-only. VLDM/VSTM or NEON variants exist in other
+     * libcs, but NEON is absent on Cortex-M4 and FP register moves buy
+     * nothing over LDR/STR for plain copying.)
+     *
+     * The sizes look like runtime values to the compiler, but the linker
+     * symbols are link-time constants, which is what makes LTO attractive
+     * here in principle. In practice GCC 15 does not fold them: LTO runs
+     * before final section addresses are assigned, so the span expressions
+     * stay runtime-valued and the calls survive even at -O2 -flto (verified
+     * on this project). Folding would need a post-link optimizer that sees
+     * the final symbol values. */
     memcpy(&__vector_start__, &__vector_load__, &__vector_end__ - &__vector_start__);
     memcpy(&__data_start__, &__data_load__, &__data_end__ - &__data_start__);
     memset(&__bss_start__, 0, &__bss_end__ - &__bss_start__);
