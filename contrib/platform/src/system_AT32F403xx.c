@@ -11,7 +11,7 @@
 #include "AT32F403Axx.h"
 #include "system_AT32F403Axx.h"
 
-uint32_t SystemCoreClock;
+uint32_t SystemCoreClock = 8000000;
 
 #ifndef HSE_VALUE
 #define HSE_VALUE 8000000
