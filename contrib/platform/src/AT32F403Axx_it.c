@@ -105,12 +105,15 @@ void Reset_IRQHandler(void) {
      * globals to read as zero). The vector table is copied to RAM so VTOR
      * can point at it and handlers can be redirected at run time.
      *
-     * memcpy/memset are safe this early, unlike most libc: the newlib
-     * versions are pure register loops with no globals, locks, heap or
-     * syscalls, so they need neither .data nor .bss to be alive yet. The
-     * stack works because the hardware loaded SP from vector slot 0 before
-     * jumping here. The regions never overlap (flash source, RAM dest),
-     * so memcpy's no-overlap contract holds.
+     * memcpy/memset are safe this early, unlike most libc, because they are
+     * "almost pure": not pure in the strict sense (they write through their
+     * pointer arguments), but every read and write is confined to the
+     * caller-passed buffers -- no globals, locks, heap or syscalls. All
+     * effects are restrained and defined by the arguments, so they need
+     * neither .data nor .bss to be alive yet. The stack works because the
+     * hardware loaded SP from vector slot 0 before jumping here. The
+     * regions never overlap (flash source, RAM dest), so memcpy's
+     * no-overlap contract holds.
      *
      * They also beat hand-rolled byte loops: newlib's ARM memcpy aligns to
      * words and moves 64 bytes per iteration through 16 unrolled LDR/STR
