@@ -65,10 +65,11 @@ void SystemCoreClockUpdate(void) {
             break;
     }
 
-    // AHBDIV 0xxx: no division; 1000..1011: /2 /4 /8 /16;
-    // 1100..1111: /64 /128 /256 /512. Table entries are shift counts.
-    static const uint8_t ahb_shift[16] = {
-        0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 6, 7, 8, 9
-    };
-    SystemCoreClock >>= ahb_shift[AHBDIV];
+    // AHBDIV 0xxx: no division; 1000..1011: /2 /4 /8 /16 (shift 1..4);
+    // 1100..1111: /64 /128 /256 /512 (shift 6..9). Bit 2 skips the missing
+    // /32 encoding, so the shift is low2 + (bit2 ? 6 : 1), gated by bit 3.
+    if (AHBDIV & 0x8) {
+        uint32_t shift = (AHBDIV & 0x3) + ((AHBDIV & 0x4) ? 6 : 1);
+        SystemCoreClock >>= shift;
+    }
 }
