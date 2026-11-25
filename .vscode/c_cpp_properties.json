@@ -1,0 +1,22 @@
+{
+    "version": 4,
+    "configurations": [
+        {
+            "name": "Cortex-M Make",
+            "includePath": [
+                "${workspaceFolder}/include",
+                "${workspaceFolder}/contrib/platform/include",
+                "${workspaceFolder}/contrib/cmsis/CMSIS/Core/Include"
+            ],
+            "defines": [
+                "AT32F403ACCT6",
+                "HSE_VALUE=12000000",
+                "LSE_VALUE=32768"
+            ],
+            "compilerPath": "C:\\Tools\\Embedded\\bin\\arm-none-eabi-gcc.exe",
+            "cStandard": "gnu17",
+            "cppStandard": "gnu++17",
+            "intelliSenseMode": "gcc-arm"
+        }
+    ]
+}
