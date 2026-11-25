@@ -1,10 +1,37 @@
 # AI tool transcript
 
 This project was reviewed, debugged, and documented in a pair-programming
-session with an AI coding assistant (GitHub Copilot CLI in VS Code).
-This file records the human prompts and a summary of what the assistant
-did in response, so the provenance of the code and comments is auditable.
-Commits referenced below are in this repository's history.
+session with an AI coding assistant. This file records the human prompts
+and a summary of what the assistant did in response, so the provenance of
+the code and comments is auditable. Commits referenced below are in this
+repository's history.
+
+## Session configuration
+
+Recorded from the session's own usage log and tool probes, not from
+memory, so the setup can be reproduced:
+
+| Item | Value |
+| --- | --- |
+| Harness | GitHub Copilot CLI (Copilot SDK) in Visual Studio Code |
+| Model | `Qwen Platform/qwen4-max-preview` (custom endpoint, `/responses` API) |
+| Reasoning effort | high (session default; per-call log records no override) |
+| Subagents | none used in the main thread; all 143 logged API calls ran on the model above |
+| Session ID | `3db91aa9-36d1-4beb-bedd-1c2d6c0f6502` |
+| Session start | 2026-11-25T08:06:32Z (UTC; prompts below are UTC+8 local time) |
+| OS | Windows |
+| Compiler | arm-none-eabi-gcc 15.3.1 (Arm GNU Toolchain 15.3.Rel2, arm-15.181) |
+| Make | GNU Make 4.4.1 |
+| Python | 3.13.14 (runs svdconv/irqn generators) |
+| Git | 2.50.1.windows.1 |
+| CMSIS submodule | CMSIS_6 v6.4.0 (`af1b110e`) |
+
+Caveats on reproducibility: the model is a hosted preview snapshot and
+may be updated or retired by the provider; identical prompts against a
+later snapshot are not guaranteed to produce identical output. The
+verification steps recorded below (disassembly, exhaustive encoding
+checks, clean builds) are deterministic given the toolchain versions
+above and can be re-run independently of the model.
 
 ---
 
