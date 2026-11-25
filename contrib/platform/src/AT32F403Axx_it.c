@@ -103,7 +103,23 @@ void Reset_IRQHandler(void) {
     /* RAM contents are undefined at power-up, so copy the flash images of
      * .vector and .data into RAM, then zero .bss (C requires uninitialized
      * globals to read as zero). The vector table is copied to RAM so VTOR
-     * can point at it and handlers can be redirected at run time. */
+     * can point at it and handlers can be redirected at run time.
+     *
+     * memcpy/memset are safe this early, unlike most libc: the newlib
+     * versions are pure register loops with no globals, locks, heap or
+     * syscalls, so they need neither .data nor .bss to be alive yet. The
+     * stack works because the hardware loaded SP from vector slot 0 before
+     * jumping here. The regions never overlap (flash source, RAM dest),
+     * so memcpy's no-overlap contract holds.
+     *
+     * They also beat hand-rolled byte loops: newlib's ARM memcpy aligns to
+     * words and moves 64 bytes per iteration through 16 unrolled LDR/STR
+     * pairs; memset replicates the byte into a word and clears 16 bytes per
+     * iteration with STRD pairs. GCC may additionally inline small
+     * constant-size copies as plain loads/stores. (No FPU tricks in this
+     * build: newlib's memcpy is integer-only. VLDM/VSTM or NEON variants
+     * exist in other libcs, but NEON is absent on Cortex-M4 and FP register
+     * moves buy nothing over LDR/STR for plain copying.) */
     memcpy(&__vector_start__, &__vector_load__, &__vector_end__ - &__vector_start__);
     memcpy(&__data_start__, &__data_load__, &__data_end__ - &__data_start__);
     memset(&__bss_start__, 0, &__bss_end__ - &__bss_start__);
