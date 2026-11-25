@@ -13,6 +13,62 @@
 
 uint32_t SystemCoreClock;
 
+#ifndef HSE_VALUE
+#define HSE_VALUE 8000000
+#endif
+
+#ifndef LSE_VALUE
+#define LSE_VALUE 32768
+#endif
+
 __attribute__((weak)) void SystemInit(void) {}
+
 void SystemCoreClockUpdate(void) {
+    uint32_t SCLKSTS = (CRM->CFG & CRM_CFG_SCLKSTS_Msk) >> CRM_CFG_SCLKSTS_Pos;
+    uint32_t PLLMULT =
+        ((CRM->CFG & CRM_CFG_PLLMULT3_0_Msk) >> CRM_CFG_PLLMULT3_0_Pos) |
+        ((CRM->CFG & CRM_CFG_PLLMULT5_4_Msk) >> (CRM_CFG_PLLMULT5_4_Pos - 4));
+    uint32_t AHBDIV = (CRM->CFG & CRM_CFG_AHBDIV_Msk) >> CRM_CFG_AHBDIV_Pos;
+
+    switch (SCLKSTS) {
+        case 0b01: // HEXT
+            SystemCoreClock = HSE_VALUE;
+            break;
+
+        case 0b10: // PLL
+            // PLL Source Select
+            if (CRM->CFG & CRM_CFG_PLLRCS_Msk) { // HEXTDIV
+                SystemCoreClock = HSE_VALUE;
+                if (CRM->CFG & CRM_CFG_PLLHEXTDIV_Msk) { // HEXT is divided
+                    uint32_t HEXTDIV = (CRM->MISC3 & CRM_MISC3_HEXTDIV_Msk) >> CRM_MISC3_HEXTDIV_Pos;
+                    SystemCoreClock /= (HEXTDIV + 2);
+                }
+            } else { // HICK4M
+                SystemCoreClock = 4000000;
+            }
+
+            // PLL Multiplier
+            uint32_t multiplier = PLLMULT + ((PLLMULT < 15) ? 2 : 1);
+            SystemCoreClock *= multiplier;
+            break;
+
+        case 0b00: // HICK
+        default:
+            // 48MHz reaches SCLK only with both HICK_TO_SCLK and HICKDIV set;
+            // HICKDIV alone just feeds HICK/6 (8MHz) into the clock tree.
+            if ((CRM->MISC3 & CRM_MISC3_HICK_TO_SCLK_Msk) &&
+                (CRM->MISC1 & CRM_MISC1_HICKDIV_Msk)) {
+                SystemCoreClock = 48000000;
+            } else {
+                SystemCoreClock = 8000000;
+            }
+            break;
+    }
+
+    // AHBDIV 0xxx: no division; 1000..1011: /2 /4 /8 /16;
+    // 1100..1111: /64 /128 /256 /512. Table entries are shift counts.
+    static const uint8_t ahb_shift[16] = {
+        0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 6, 7, 8, 9
+    };
+    SystemCoreClock >>= ahb_shift[AHBDIV];
 }
