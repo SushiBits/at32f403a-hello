@@ -69,11 +69,13 @@ void SystemCoreClockUpdate(void) {
     // 1100..1111: /64 /128 /256 /512 (shift 6..9). Bit 2 skips the missing
     // /32 encoding, so the shift is low2 + (bit2 ? 6 : 1), gated by bit 3.
     //
-    // Bit math rather than a ROM table: no data fetch to schedule against the
-    // flash accelerator's single-line cache. At -O2 this is branchless IT
-    // blocks; at -Og GCC outlines the constants into short jumps, which can
-    // miss the cached line, so the expression is not strictly faster there.
-    // This runs once at reset; either form is cheap enough.
+    // Bit math rather than a ROM table because of the flash accelerator's
+    // single-line cache: the linker places .rodata after all of .text, so in
+    // the linked image the table sits far from this code and its load is a
+    // guaranteed cache miss that also evicts the code line being prefetched.
+    // The expression fetches only instructions; at -O2 it is branchless IT
+    // blocks, and even the short jumps GCC outlines at -Og stay within this
+    // function, i.e. the same or adjacent cache line.
     if (AHBDIV & 0x8) {
         uint32_t shift = (AHBDIV & 0x3) + ((AHBDIV & 0x4) ? 6 : 1);
         SystemCoreClock >>= shift;
