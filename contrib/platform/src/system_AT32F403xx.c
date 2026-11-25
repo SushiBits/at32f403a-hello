@@ -73,6 +73,8 @@ void SystemCoreClockUpdate(void) {
     // single-line cache: the linker places .rodata after all of .text, so in
     // the linked image the table sits far from this code and its load is a
     // guaranteed cache miss that also evicts the code line being prefetched.
+    // Misses are expensive here: the "flash" is a bonded-in QSPI NOR die, so
+    // a refill is a serial transaction, not a few parallel-flash wait states.
     // The expression fetches only instructions; at -O2 it is branchless IT
     // blocks, and even the short jumps GCC outlines at -Og stay within this
     // function, i.e. the same or adjacent cache line.
