@@ -36,7 +36,7 @@ void SystemInit(void) {
     CRM->CFG &= ~CRM_CFG_PLLHEXTDIV_Msk; // ...undivided: F_PLLIN = 12MHz.
     // Multiplier encoding: values 0..14 mean x2..x16, so 14 means x16.
     // (15 also means x16; 16..63 mean x17..x64 via PLLMULT5_4.)
-    CRM->CFG = CRM->CFG & (~CRM_CFG_PLLMULT3_0_Msk) | (14 << CRM_CFG_PLLMULT3_0_Pos);
+    CRM->CFG = (CRM->CFG & ~CRM_CFG_PLLMULT3_0_Msk) | (14 << CRM_CFG_PLLMULT3_0_Pos);
     CRM->CFG &= ~CRM_CFG_PLLMULT5_4_Msk; // 12MHz * 16 = 192MHz.
     CRM->CFG |= CRM_CFG_PLLRANGE_Msk; // PLL output range > 72MHz.
     CRM->CTRL |= CRM_CTRL_PLLEN_Msk;
@@ -51,8 +51,8 @@ void SystemInit(void) {
     CRM->CFG |= CRM_CFG_ADCDIV1_0_Msk | CRM_CFG_ADCDIV2_Msk;
     // APB dividers: 0b100 means /2 (0xx = /1, 100..111 = /2 /4 /8 /16).
     // APB1/APB2 ceiling is 120MHz; 192/2 = 96MHz stays under it.
-    CRM->CFG = CRM->CFG & (~CRM_CFG_APB1DIV_Msk) | (0b100 << CRM_CFG_APB1DIV_Pos);
-    CRM->CFG = CRM->CFG & (~CRM_CFG_APB2DIV_Msk) | (0b100 << CRM_CFG_APB2DIV_Pos);
+    CRM->CFG = (CRM->CFG & ~CRM_CFG_APB1DIV_Msk) | (0b100 << CRM_CFG_APB1DIV_Pos);
+    CRM->CFG = (CRM->CFG & ~CRM_CFG_APB2DIV_Msk) | (0b100 << CRM_CFG_APB2DIV_Pos);
     // No flash wait-state programming here: unlike STM32's FLASH->ACR,
     // the F403A's zero-wait-state flash accelerator handles the frequency
     // change in hardware, and its FLASH->PSR has no software wait-cycle
@@ -66,7 +66,7 @@ void SystemInit(void) {
 
     // Switch SCLK to the PLL and wait until the hardware reports the
     // switch complete (SCLKSTS, not SCLKSEL: the write only requests it).
-    CRM->CFG = CRM->CFG & (~CRM_CFG_SCLKSEL_Msk) | (0b10 << CRM_CFG_SCLKSEL_Pos);
+    CRM->CFG = (CRM->CFG & ~CRM_CFG_SCLKSEL_Msk) | (0b10 << CRM_CFG_SCLKSEL_Pos);
     while ((CRM->CFG & CRM_CFG_SCLKSTS_Msk) != (0b10 << CRM_CFG_SCLKSTS_Pos));
 
     CRM->MISC3 &= ~CRM_MISC3_AUTO_STEP_EN_Msk;
@@ -76,10 +76,37 @@ void SystemInit(void) {
     // Reset_IRQHandler calls it at the right time.
 }
 
+/**
+ * @brief Blink the LED on PB13 at 1Hz (500ms per half period).
+ *
+ * GPIO here is the F1-style configuration-register block, not the F4
+ * MODER/AFR style: each pin has a 2-bit mode field (IOMC) and a 2-bit
+ * function field (IOFC), pins 8..15 packed into CFGHR at 4 bits per pin.
+ * The GPIOA_* field macros apply to GPIOB as well: GPIOB is declared
+ * derivedFrom GPIOA in the SVD, so svdconv emits the field macros once,
+ * under the base peripheral's name.
+ */
 int main(void) {
     systick_init();
 
+    // GPIO registers read as zero and ignore writes until the port's bus
+    // clock is enabled.
+    CRM->APB2EN |= CRM_APB2EN_GPIOBEN_Msk;
+
+    // PB13: IOMC=01 (output, 10MHz max slew), IOFC=00 (general-purpose
+    // push-pull; with output mode the function field picks push-pull vs
+    // open-drain, not alternate function).
+    GPIOB->CFGHR = (GPIOB->CFGHR & (~(GPIOA_CFGHR_IOFC13_Msk | GPIOA_CFGHR_IOMC13_Msk))) | ((0b00 << GPIOA_CFGHR_IOFC13_Pos) | (0b01 << GPIOA_CFGHR_IOMC13_Pos));
+
+    // Start with the pin driven low so the first toggle has a defined
+    // edge. ODT reset value is 0 anyway; the explicit clear documents it.
+    GPIOB->ODT &= ~(1<<13);
+
     for (;;) {
+        // Read-modify-write toggle is safe here: nothing else writes ODT
+        // (no ISR touches this port). If that changes, use the atomic
+        // SCR/CLR bit set/reset registers instead of ^= on ODT.
+        GPIOB->ODT ^= (1<<13);
         delay(500);
     }
 }
