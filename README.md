@@ -5,9 +5,9 @@ Bare-metal project starter for the **Artery AT32F403ACC** (Cortex-M4F,
 No vendor SDK: the device header is generated from SVD, the startup code
 is plain C, and the only libraries are CMSIS core headers and newlib.
 
-The demo brings the core up to **192 MHz** from a 12 MHz crystal and
+The demo brings the core up to **192 MHz** from a 12 MHz crystal,
 provides an Arduino-style SysTick timebase (`millis`, `micros`, `delay`,
-`delay_us`).
+`delay_us`), and blinks an LED on **PB13** at 1 Hz.
 
 ## Layout
 
@@ -90,6 +90,22 @@ Cortex-M bring-up. In short:
   pure" (all accesses confined to the caller's buffers), need no
   initialized globals, and newlib's ARM implementations move 64 bytes
   per iteration — faster than hand-rolled byte loops.
+
+### Blinker
+
+`main()` enables the GPIOB bus clock, configures PB13 as a 10 MHz
+push-pull output, and toggles it every 500 ms. Two AT32-specific notes
+(annotated in the code):
+
+- GPIO is the **F1-style** `CFGLR`/`CFGHR` configuration block (2-bit
+  mode + 2-bit function per pin), not the F4 `MODER`/`AFR` style.
+- The field macros are named `GPIOA_*` even for GPIOB: the SVD declares
+  the other ports `derivedFrom="GPIOA"`, so svdconv emits the field
+  definitions once under the base peripheral. The layouts are identical.
+
+The `ODT ^=` toggle is a read-modify-write; it is safe here because no
+ISR touches the port. For concurrent access use the atomic `SCR`/`CLR`
+bit set/reset registers.
 
 ### Timebase
 

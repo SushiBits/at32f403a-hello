@@ -171,3 +171,25 @@ here) and the 192 MHz-for-exact-48 MHz-USB rationale. The human's
 > PROMPTS.md.
 
 This README and transcript.
+
+> Edit the PROMPTS.md front matter to include not only the harness but
+> also the model's own name and configuration. Since that file is a
+> provenance log, make it reproducible.
+
+The assistant pulled the model identity and call counts from the
+session's own usage log (rather than asserting them from memory), probed
+the toolchain versions, and added the Session configuration table above,
+with a caveat that hosted preview models are not pinned snapshots
+(`ec258da`).
+
+## 8. Blinker
+
+> Now I have the blinker running. Annotate the code appropriately,
+> update README and PROMPTS, commit and I'll prep the release.
+
+The human added a PB13 LED blinker to `main()` and confirmed it running
+on hardware. The assistant verified the GPIO configuration against the
+SVD (F1-style CFGHR fields; `GPIOA_*` macro names apply to GPIOB via
+SVD `derivedFrom`), annotated the bus-clock prerequisite, the mode/
+function encodings, and the RMW-toggle concurrency caveat (atomic
+`SCR`/`CLR` alternative), and updated the README with a Blinker section.
