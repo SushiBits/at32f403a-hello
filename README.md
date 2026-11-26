@@ -24,10 +24,29 @@ contrib/platform/       Device support layer
 contrib/cmsis/          CMSIS_6 submodule (core headers only, v6.4.0)
 contrib/svdconv/        Submodule: SVD -> device header generator
 contrib/irqn/           Submodule: device header -> IRQ handler table
+docs/                   Pinned vendor documentation (see below)
 ```
 
 Generated files (`AT32F403Axx.h`, `AT32F403Axx_handlers.h`) are build
 products, not checked in. Edit the SVD, not the headers.
+
+## Vendor documentation
+
+`docs/` pins the exact vendor document revisions this code was written
+and verified against, so register-level decisions stay auditable even if
+Artery's website moves on:
+
+| File | Document | Revision |
+| --- | --- | --- |
+| `docs/DS_AT32F403A_V2.04_CH.pdf` | AT32F403A datasheet | V2.04 |
+| `docs/RM_AT32F403A_407_407A_CH_V2.07.pdf` | AT32F403A/407/407A reference manual | V2.07 |
+
+`contrib/platform/share/AT32F403Axx.svd` is likewise taken from the
+vendor's device pack, not hand-written; it is the source of truth for
+the generated header and IRQ table. The documents and SVD are Artery
+Technology's copyrighted material, redistributed here unmodified for
+development use with their microcontrollers; they are not covered by
+this repository's BSD license.
 
 ## Building
 
@@ -133,5 +152,7 @@ session transcript in [PROMPTS.md](./PROMPTS.md).
 
 ## License
 
-BSD 3-Clause, see [LICENSE.md](./LICENSE.md). Submodules carry their own
-licenses (CMSIS_6: Apache-2.0).
+BSD 3-Clause for the original code, see [LICENSE.md](./LICENSE.md).
+Submodules carry their own licenses (CMSIS_6: Apache-2.0). The vendor
+documents in `docs/` and the vendor-pack SVD remain Artery Technology's
+copyrighted material under their own terms.
