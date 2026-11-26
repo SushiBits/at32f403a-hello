@@ -68,6 +68,37 @@ VS Code tasks (`Build`, `Clean`) and a cortex-debug J-Link launch
 configuration are included in `.vscode/`. Adjust `serverpath`,
 `ipAddress`, and `device` in `launch.json` for your probe.
 
+## Fork checklist
+
+This starter targets one specific board: **AT32F403ACC, 12 MHz HSE
+crystal, LED on PB13**. Most forks need to change all three. Do this
+before anything else, and re-check the derived clocks:
+
+1. **Crystal frequency.** 12 MHz is uncommon; 8 MHz is the usual board
+   choice. Change `-DHSE_VALUE=...` in *both* the `Makefile` and
+   `.vscode/c_cpp_properties.json`, then adjust the PLL multiplier in
+   `SystemInit()` (`src/main.c`) so the core and USB clocks still land
+   where you want them. With 8 MHz: ×24 = 192 MHz keeps USB = PLL/4 =
+   48 MHz exact (multiplier encoding 23; see the encoding comment in
+   `SystemInit`). The `HSE_VALUE` fallback in
+   `contrib/platform/src/system_AT32F403xx.c` is 8 MHz, but the build
+   always passes `-D`, so the Makefile is what counts.
+2. **Part / memory map.** `contrib/platform/lib/AT32F403ACC.ld` pins
+   256 KB flash / 96 KB SRAM. Other AT32F403A grades differ (e.g.
+   403AVG: 1 MB flash); edit `LENGTH` there, and the `-D` device define
+   if you use a different part macro. The SVD covers the whole family,
+   so the generated header usually needs no change.
+3. **LED pin.** `main()` enables GPIOB and drives PB13. For another
+   pin/port: enable that port's `CRM->APB2EN` bit, edit the right
+   `CFGLR` (pins 0–7) or `CFGHR` (pins 8–15) field pair, and the ODT
+   bit. Field macros are named `GPIOA_*` for every port (SVD
+   `derivedFrom`; see the Blinker section).
+
+Also check: the J-Link `device`/probe settings in `.vscode/launch.json`,
+and note that `SystemInit()` assumes reset-default clock state (fine
+after power-on; a debugger warm reset that left the PLL running may
+need a `crm_reset()`-style cleanup first).
+
 ## How it works
 
 ### Clock bring-up

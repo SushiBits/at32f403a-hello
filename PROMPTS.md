@@ -193,3 +193,23 @@ SVD (F1-style CFGHR fields; `GPIOA_*` macro names apply to GPIOB via
 SVD `derivedFrom`), annotated the bus-clock prerequisite, the mode/
 function encodings, and the RMW-toggle concurrency caveat (atomic
 `SCR`/`CLR` alternative), and updated the README with a Blinker section.
+
+## 9. Release preparation
+
+> I am pinning the vendor docs here, and the SVD is also a file taken
+> from vendor packs. Update README appropriately, commit the docs and
+> push.
+
+Committed the pinned datasheet V2.04 and RM V2.07 with a README section
+documenting their provenance and Artery's copyright, and pushed
+(`4daf864`). Follow-up discussion covered why vendors tolerate (and
+usually license) doc redistribution, and the repo's role as a
+register-level starter an FAE can point customers at.
+
+> Do add those (or I'll get an exorbitantly high amount of WeChat calls
+> while not being Artery FAE. The 12MHz HSE crystal is uncommon and LED
+> pin will change from project to project.)
+
+Added a Fork checklist to the README: crystal frequency (with the
+8 MHz x24 = 192 MHz recipe preserving exact 48 MHz USB), part memory
+map, and LED pin/port, plus probe settings and the warm-reset caveat.
